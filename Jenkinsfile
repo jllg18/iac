@@ -1,12 +1,13 @@
 pipeline {
     agent {
         kubernetes {
+            label "kube-agent"  // 💡 Debe coincidir con el Pod Template en Jenkins
             yaml """
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    jenkins-agent: terraform-checkov
+    jenkins-agent: kube-agent
 spec:
   containers:
     - name: terraform
@@ -21,16 +22,10 @@ spec:
         }
     }
 
-    environment {
-        TF_VAR_region = "us-east-1"
-        TF_VAR_availability_zone = "us-east-1a"
-        TF_VAR_key_name = "mi-clave-ssh"
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/jllg18/iac.git"
+                git branch: 'main', url: 'https://github.com/jllg18/iac.git'
             }
         }
 
