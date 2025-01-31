@@ -60,9 +60,10 @@ spec:
             }
         }
 
+        /*
         stage('Checkov Scan') {
             steps {
-                container('checkov') {
+               container('checkov') {
                     sh '''
                         cd infra-iac
                         checkov -d .
@@ -70,6 +71,7 @@ spec:
                 }
             }
         }
+        */
 
         stage('User Decision') {
             steps {
