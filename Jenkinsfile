@@ -32,8 +32,11 @@ spec:
         stage('Terraform Init & Plan') {
             steps {
                 container('terraform') {
-                    sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
+                    sh '''
+                        cd infra-iac
+                        terraform init
+                        terraform plan -out=tfplan
+                    '''
                 }
             }
         }
