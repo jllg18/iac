@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket         = "adostateterraform"  # Bucket S3 donde se guardará el estado de Terraform
+    key            = "terraform.tfstate"  # Archivo donde se almacenará el estado
+    region         = "us-east-1"          # Región donde se encuentra el S3
+    dynamodb_table = "dynamoDB-terra"     # Tabla DynamoDB para bloqueo de estado
+    encrypt        = true                 # Cifrado de estado activado
+  }
+}
+
 provider "aws" {
   region = var.region
 }
