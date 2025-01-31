@@ -2,42 +2,47 @@ provider "aws" {
   region = var.region
 }
 
-# Obtener la VPC por defecto
-data "aws_vpc" "default" {
-  default = true
+# Variable para la VPC específica
+variable "vpc_id" {
+  default = "vpc-0cec5cb97f2fc50b6"  # ID de la VPC de la imagen
 }
 
-# Obtener la subred pública dentro de la VPC por defecto
+# Obtener la VPC específica
+data "aws_vpc" "default" {
+  id = var.vpc_id
+}
+
+# Obtener la subred pública dentro de la VPC específica
 data "aws_subnet" "default" {
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = var.vpc_id
   availability_zone = var.availability_zone
 }
 
-# Crear un grupo de seguridad para permitir SSH y HTTP
+# Crear un grupo de seguridad para la EC2
 resource "aws_security_group" "ec2_sg" {
   name        = "ec2-security-group"
   description = "Permitir SSH y HTTP"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Acceso SSH desde cualquier parte (mejor restringir en producción)
+    cidr_blocks = ["0.0.0.0/0"]  # Acceso SSH desde cualquier parte (ajustar en producción)
   }
 
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Permitir tráfico HTTP
+    cidr_blocks = ["0.0.0.0/0"]  # Permitir tráfico HTTP
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"] # Permitir salida a cualquier destino
+    cidr_blocks = ["0.0.0.0/0"]  # Permitir salida a cualquier destino
   }
 
   tags = {
