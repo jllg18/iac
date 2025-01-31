@@ -4,7 +4,7 @@ provider "aws" {
 
 # Variable para la VPC específica
 variable "vpc_id" {
-  default = "vpc-0cec5cb97f2fc50b6"  # ID de la VPC de la imagen
+  default = "vpc-0cec5cb97f2fc50b6"  # ID de la VPC existente
 }
 
 # Obtener la VPC específica
@@ -14,7 +14,7 @@ data "aws_vpc" "default" {
 
 # Obtener la subred pública dentro de la VPC específica
 data "aws_subnet" "default" {
-  vpc_id = var.vpc_id
+  vpc_id            = var.vpc_id
   availability_zone = var.availability_zone
 }
 
@@ -26,7 +26,7 @@ data "aws_security_groups" "existing_sg" {
   }
 }
 
-# Crear un Security Group si no existe
+# Crear un Security Group solo si no existe
 resource "aws_security_group" "ec2_sg" {
   count       = length(data.aws_security_groups.existing_sg.ids) > 0 ? 0 : 1
   name_prefix = "ec2-security-group-"  # Prefijo para evitar duplicados
@@ -37,7 +37,7 @@ resource "aws_security_group" "ec2_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Acceso SSH desde cualquier parte (ajustar en producción)
+    cidr_blocks = ["0.0.0.0/0"]  # Acceso SSH (ajustar en producción)
   }
 
   ingress {
@@ -64,13 +64,19 @@ locals {
   security_group_id = length(data.aws_security_groups.existing_sg.ids) > 0 ? data.aws_security_groups.existing_sg.ids[0] : aws_security_group.ec2_sg[0].id
 }
 
-# Crear una instancia EC2
+# CREAR PAR DE CLAVES SSH AUTOMÁTICAMENTE 
+resource "aws_key_pair" "generated_key" {
+  key_name   = "mi-clave-ssh"  # Nombre de la clave SSH en AWS
+  public_key = file("~/.ssh/id_rsa.pub")  # Asegúrate de tener esta clave pública
+}
+
+# CREAR INSTANCIA EC2 
 resource "aws_instance" "web_server" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnet.default.id
-  vpc_security_group_ids = [local.security_group_id]  # Usa el SG existente o el nuevo
-  key_name               = var.key_name
+  vpc_security_group_ids = [local.security_group_id]
+  key_name               = aws_key_pair.generated_key.key_name  # ✅ Usa la clave generada
 
   tags = {
     Name = "web-server"

@@ -7,7 +7,7 @@ variable "availability_zone" {
 }
 
 variable "ami_id" {
-  default = "ami-06fcf170f013de4e2"  # AMI de Amazon Linux 2 (ejemplo, verificar en AWS)
+  default = "ami-06fcf170f013de4e2"  # Reemplaza con la AMI de tu preferencia
 }
 
 variable "instance_type" {
@@ -15,5 +15,5 @@ variable "instance_type" {
 }
 
 variable "key_name" {
-  default = "mi-clave-ssh"  # Nombre de la clave SSH en AWS
+  default = "mi-clave-ssh"  # Nombre de la clave SSH generada
 }
