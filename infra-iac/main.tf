@@ -18,9 +18,18 @@ data "aws_subnet" "default" {
   availability_zone = var.availability_zone
 }
 
-# Crear un grupo de seguridad para la EC2
+# Buscar si ya existe un Security Group con el nombre "ec2-security-group"
+data "aws_security_groups" "existing_sg" {
+  filter {
+    name   = "group-name"
+    values = ["ec2-security-group"]
+  }
+}
+
+# Crear un Security Group si no existe
 resource "aws_security_group" "ec2_sg" {
-  name        = "ec2-security-group"
+  count       = length(data.aws_security_groups.existing_sg.ids) > 0 ? 0 : 1
+  name_prefix = "ec2-security-group-"  # Prefijo para evitar duplicados
   description = "Permitir SSH y HTTP"
   vpc_id      = var.vpc_id
 
@@ -50,12 +59,17 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
+# Obtener el ID del Security Group existente o el que creó Terraform
+locals {
+  security_group_id = length(data.aws_security_groups.existing_sg.ids) > 0 ? data.aws_security_groups.existing_sg.ids[0] : aws_security_group.ec2_sg[0].id
+}
+
 # Crear una instancia EC2
 resource "aws_instance" "web_server" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnet.default.id
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  vpc_security_group_ids = [local.security_group_id]  # Usa el SG existente o el nuevo
   key_name               = var.key_name
 
   tags = {

@@ -7,7 +7,7 @@ variable "availability_zone" {
 }
 
 variable "ami_id" {
-  default = "ami-0c55b159cbfafe1f0"  # AMI de Amazon Linux 2 (ejemplo, verificar en AWS)
+  default = "ami-06fcf170f013de4e2"  # AMI de Amazon Linux 2 (ejemplo, verificar en AWS)
 }
 
 variable "instance_type" {
