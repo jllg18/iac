@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            label "kube-agent"  // 💡 Debe coincidir con el Pod Template en Jenkins
+            label "kube-agent"
             yaml """
 apiVersion: v1
 kind: Pod
@@ -14,12 +14,27 @@ spec:
       image: hashicorp/terraform:latest
       command: ["sleep"]
       args: ["9999999"]
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: workspace-volume
     - name: checkov
       image: bridgecrew/checkov:latest
       command: ["sleep"]
       args: ["9999999"]
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: workspace-volume
+  volumes:
+    - name: workspace-volume
+      emptyDir: {}
 """
         }
+    }
+
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-key')
+        AWS_DEFAULT_REGION = "us-east-1"
     }
 
     stages {
@@ -33,6 +48,10 @@ spec:
             steps {
                 container('terraform') {
                     sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+
                         cd infra-iac
                         terraform init
                         terraform plan -out=tfplan
@@ -44,7 +63,10 @@ spec:
         stage('Checkov Scan') {
             steps {
                 container('checkov') {
-                    sh 'checkov -d . --soft-fail'
+                    sh '''
+                        cd infra-iac
+                        checkov -d .
+                    '''
                 }
             }
         }
@@ -68,11 +90,18 @@ spec:
             steps {
                 container('terraform') {
                     script {
-                        if (env.USER_DECISION == 'APPLY') {
-                            sh 'terraform apply -auto-approve tfplan'
-                        } else if (env.USER_DECISION == 'DESTROY') {
-                            sh 'terraform destroy -auto-approve'
-                        }
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                            export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+
+                            cd infra-iac
+                            if [ "$USER_DECISION" == "APPLY" ]; then
+                                terraform apply -auto-approve tfplan
+                            else
+                                terraform destroy -auto-approve
+                            fi
+                        '''
                     }
                 }
             }
