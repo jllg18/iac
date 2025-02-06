@@ -60,7 +60,6 @@ spec:
             }
         }
 
-        /*
         stage('Checkov Scan') {
             steps {
                container('checkov') {
@@ -71,7 +70,7 @@ spec:
                 }
             }
         }
-        */
+
 
         stage('User Decision') {
             steps {
